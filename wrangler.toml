@@ -1,0 +1,19 @@
+name = "wrangler-typescript"
+type = "javascript"
+zone_id = ""
+account_id = ""
+route = ""
+workers_dev = true
+compatibility_date = "2022-03-13"
+
+[build]
+command = "npm install && npm run build"
+
+[build.upload]
+format = "modules"
+dir = "dist"
+main = "./index.mjs"
+
+[[build.upload.rules]]
+type = "ESModule"
+globs = ["**/*.mjs"]

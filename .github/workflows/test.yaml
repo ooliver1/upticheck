@@ -1,0 +1,17 @@
+name: Test
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Create .env
+        run: bash .github/env.sh "$secrets"
+        env:
+          secrets: ${{ toJson(secrets) }}
+      - name: Install modules
+        run: npm i
+      - name: Run tests
+        run: npm test
