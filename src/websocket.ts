@@ -2,7 +2,6 @@
 
 function handleSession(webSocket: WebSocket, env: Env) {
   webSocket.accept();
-  console.log("h");
 
   webSocket.addEventListener("message", async (event: MessageEvent) => {
     const name = event.data;
