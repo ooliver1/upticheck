@@ -19,7 +19,5 @@ async def main():
         async for _ in sesh:
             pass
 
-    print(sesh.close_code)
-
 
 run(main())

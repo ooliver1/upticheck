@@ -1,5 +1,7 @@
 // check me out with my comments here
 
+declare const MINIFLARE: boolean;
+
 function handleSession(webSocket: WebSocket, env: Env) {
   webSocket.accept();
 
@@ -10,8 +12,20 @@ function handleSession(webSocket: WebSocket, env: Env) {
     }
 
     await env.UPTIME.put(name, new Date().toISOString());
-    webSocket.addEventListener("close", async () => {
-      await env.UPTIME.put(name, "down");
+    webSocket.addEventListener("close", async (event: CloseEvent) => {
+      if (event.code !== 1006) {
+        await env.UPTIME.put(name, "down");
+      } else {
+        await env.UPTIME.put(name, "waiting");
+
+        // wait for 10s to see if reconnect
+
+        await new Promise<null>((resolve) => setTimeout(resolve, 10000, null));
+
+        if ((await env.UPTIME.get(name)) === "waiting") {
+          await env.UPTIME.put(name, "down");
+        }
+      }
     });
   });
 }

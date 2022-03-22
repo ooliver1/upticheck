@@ -1,4 +1,5 @@
 import { handleRequest } from "../src/index";
+import jest from "jest";
 
 function promiseWebsocketErr(item: WebSocket): Promise<null> {
   return Promise.race([
@@ -149,4 +150,45 @@ describe("uptime", () => {
 
     expect(res.status).toEqual(404);
   });
+
+  test("is waiting", async () => {
+    const env = getMiniflareBindings();
+    const result = await handleRequest(
+      new Request("http://localhost/ws", {
+        headers: { Authorization: env.KEY, Upgrade: "websocket" },
+      }),
+      env
+    );
+
+    const ws = result.webSocket;
+
+    expect(ws).not.toBeUndefined();
+    if (ws) {
+      ws.accept();
+      ws.send("h");
+
+      // let it set
+      await new Promise((resolve) => setTimeout(resolve, 1, null));
+
+      const kClose = Object.getOwnPropertySymbols(WebSocket.prototype).find(
+        (symbol) => symbol.description === "kClose"
+      );
+      expect(kClose).not.toBeUndefined();
+      if (kClose) {
+        // @ts-ignore
+        ws[kClose](1006);
+      }
+      // let it set
+      await new Promise((resolve) => setTimeout(resolve, 1, null));
+
+      const resp = await handleRequest(new Request("http://localhost/uptime/h"), env);
+      expect((await resp.text()).toLowerCase()).toContain("waiting");
+
+      // let it DIE
+      await new Promise((resolve) => setTimeout(resolve, 11000, null));
+
+      const res = await handleRequest(new Request("http://localhost/uptime/h"), env);
+      expect(res.status).toEqual(503);
+    }
+  }, 12000);
 });
