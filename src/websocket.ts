@@ -6,7 +6,6 @@ function handleSession(webSocket: WebSocket, env: Env) {
 
   webSocket.addEventListener("message", async (event: MessageEvent) => {
     const name = event.data;
-    console.log(name);
     if (name instanceof ArrayBuffer) {
       return webSocket.close(4400, "Expected string message");
     }
