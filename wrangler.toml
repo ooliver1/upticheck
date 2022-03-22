@@ -2,6 +2,7 @@ name = "upticheck"
 type = "javascript"
 workers_dev = true
 compatibility_date = "2022-03-13"
+
 kv_namespaces = [
     { binding = "UPTIME", id = "249d443207554db9a43bd737016f74e5" }
 ]
