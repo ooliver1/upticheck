@@ -4,7 +4,7 @@ workers_dev = true
 compatibility_date = "2022-03-13"
 
 kv_namespaces = [
-    { binding = "UPTIME", id = "249d443207554db9a43bd737016f74e5" }
+    { binding = "UPTIME", preview_id = "5ddd0194e1794c0487f7c746a749a943", id = "249d443207554db9a43bd737016f74e5" }
 ]
 
 [build]
