@@ -12,7 +12,26 @@ function handleSession(webSocket: WebSocket, env: Env) {
     }
 
     await env.UPTIME.put(name, new Date().toISOString());
+    const a = await fetch(env.WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "h" }),
+    });
+    console.log(a.status, await a.text());
+    console.log("h");
+    webSocket.addEventListener("error", async (event: Event) => {
+      await fetch(env.WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: `error: ${event.type}: ${event}` }),
+      });
+    });
     webSocket.addEventListener("close", async (event: CloseEvent) => {
+      await fetch(env.WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: `closed with ${event.code}` }),
+      });
       if (event.code !== 1006) {
         await env.UPTIME.put(name, "down");
       } else {

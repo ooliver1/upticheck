@@ -13,9 +13,9 @@ async def main():
     async with ClientSession().ws_connect(
         "ws://localhost:8787/ws", headers={"Authorization": key}
     ) as sesh:
-        print("pls")
         await sleep(1)
         await sesh.send_str("h")
+        print("pls")
         async for _ in sesh:
             pass
 
