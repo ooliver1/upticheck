@@ -1,6 +1,90 @@
-// check me out with my comments here
+export function check(
+  ev: MessageEvent,
+  res: (arg0: any) => void,
+  rej: (arg0: any) => void
+): void {
+  if (typeof ev.data === "string" && ev.data === "pong") {
+    res(null);
+  } else {
+    rej(null); // wtf is it doing
+  }
+}
 
-declare const MINIFLARE: boolean;
+export async function stuff(ping: () => Promise<boolean>): Promise<boolean> {
+  const passed = await ping();
+
+  if (passed) {
+    setTimeout(ping, 5 * 1000);
+    return true;
+  }
+
+  return false;
+}
+
+function promiseWebsocketMsg(item: WebSocket): Promise<null> {
+  return Promise.race([
+    new Promise<null>((resolve, reject) => {
+      const listener = (event: MessageEvent) => {
+        item.removeEventListener("message", listener);
+        check(event, resolve, reject);
+      };
+      item.addEventListener("message", listener);
+    }),
+    new Promise<null>((_, reject) => {
+      setTimeout(() => {
+        reject(null); // took over 1s to respond
+      }, 1000);
+    }),
+  ]);
+}
+
+export async function handlePing(webSocket: WebSocket, env: Env, name: string) {
+  async function ping() {
+    // await for first call
+
+    try {
+      webSocket.send("ping");
+    } catch (e) {
+      if (e instanceof TypeError) {
+        // cannot call on closed ws
+        return false;
+      }
+    }
+
+    try {
+      await promiseWebsocketMsg(webSocket); // 1s or msg
+    } catch {
+      try {
+        webSocket.close(4504, "Ping timeout");
+      } catch (e) {
+        if (e instanceof TypeError) {
+          // cannot close closed ws
+          return false;
+        }
+      }
+
+      await env.UPTIME.put(name, "waiting");
+
+      // wait for 5s to see if reconnect
+      await new Promise<null>((resolve) => setTimeout(resolve, 5000, null));
+
+      if ((await env.UPTIME.get(name)) === "waiting") {
+        await env.UPTIME.put(name, "down");
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  // @ts-ignore
+  setTimeout(async () => {
+    await stuff(ping);
+  }, 1000);
+  // im so sorry but i need to 'test'
+
+  return ping;
+}
 
 function handleSession(webSocket: WebSocket, env: Env) {
   webSocket.accept();
@@ -12,40 +96,7 @@ function handleSession(webSocket: WebSocket, env: Env) {
     }
 
     await env.UPTIME.put(name, new Date().toISOString());
-    const a = await fetch(env.WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: "h" }),
-    });
-    console.log(a.status, await a.text());
-    console.log("h");
-    webSocket.addEventListener("error", async (event: Event) => {
-      await fetch(env.WEBHOOK, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: `error: ${event.type}: ${event}` }),
-      });
-    });
-    webSocket.addEventListener("close", async (event: CloseEvent) => {
-      await fetch(env.WEBHOOK, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: `closed with ${event.code}` }),
-      });
-      if (event.code !== 1006) {
-        await env.UPTIME.put(name, "down");
-      } else {
-        await env.UPTIME.put(name, "waiting");
-
-        // wait for 10s to see if reconnect
-
-        await new Promise<null>((resolve) => setTimeout(resolve, 10000, null));
-
-        if ((await env.UPTIME.get(name)) === "waiting") {
-          await env.UPTIME.put(name, "down");
-        }
-      }
-    });
+    await handlePing(webSocket, env, name);
   });
 }
 

@@ -18,7 +18,7 @@ export default async function handleUptime(
     return new Response("Service is down", { status: 503 });
   } else if (uptime === "waiting") {
     // dont want this to be 200 but i also dont want to break uptime counts
-    return new Response("Waiting for service to reconnect from abnormal disconnect", { status: 200 });
+    return new Response("Waiting for service to reconnect", { status: 200 });
   }
 
   const date = new Date(uptime);
