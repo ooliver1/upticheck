@@ -89,15 +89,17 @@ export async function handlePing(webSocket: WebSocket, env: Env, name: string) {
 function handleSession(webSocket: WebSocket, env: Env) {
   webSocket.accept();
 
-  webSocket.addEventListener("message", async (event: MessageEvent) => {
+  async function nameListener(event: MessageEvent) {
     const name = event.data;
     if (name instanceof ArrayBuffer) {
       return webSocket.close(4400, "Expected string message");
     }
 
     await env.UPTIME.put(name, new Date().toISOString());
+    webSocket.removeEventListener("message", nameListener);
     await handlePing(webSocket, env, name);
-  });
+  }
+  webSocket.addEventListener("message", nameListener);
 }
 
 function instantClose(webSocket: WebSocket, code: number, reason: string) {
