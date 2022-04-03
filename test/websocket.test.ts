@@ -1,4 +1,4 @@
-import { check, handlePing, stuff } from "../src/webSocket";
+import { check, handlePing, stuff } from "../src/websocket";
 import getEventListener from "./eventlistener";
 
 test("resolves", async () => {
